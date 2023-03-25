@@ -90,14 +90,14 @@ class my_Database():
     def select(self, sql = None, table:str = 'music')->dict:
         if not sql:
             sql = "SELECT * FROM " + table
-        cursor = self.conn.cursor()
+        cursor = self.conn.cursor(cursor = pymysql.cursors.DictCursor)
         cursor.execute(sql)   
-        res = cursor.fetchall()  
+        data = cursor.fetchall()  
 
-        cursor.execute("DESC " + table)   
-        attr_record = cursor.fetchall()
+        #cursor.execute("DESC " + table)   
+        #attr_record = cursor.fetchall()
 
-        data = [ { attr[0] :row[i] for i, attr in enumerate(attr_record) } for row in res]
+        #data = [ { attr[0] :row[i] for i, attr in enumerate(attr_record) } for row in res]
         return data
     
     # search by name 
