@@ -5,11 +5,11 @@ USER = 'csci3280'
 PASSWORD = 'csci3280'
 DATABASE = 'project'
 ATTRIBUTES = {'id': 'INT AUTO_INCREMENT PRIMARY KEY',
-              'name': 'CHAR(40) NOT NULL',
+              'name': 'CHAR(80) NOT NULL',
               'time': 'TIME NOT NULL',
-              'author': 'CHAR(40)',
-              'album' : 'CHAR(40)',
-              'location' : 'CHAR(40)'}
+              'author': 'CHAR(80)',
+              'album' : 'CHAR(80)',
+              'location' : 'CHAR(80)'}
 
 class my_Database():
     def __init__(self, host = HOST,user= USER, password= PASSWORD, database= DATABASE ) -> None:
@@ -35,13 +35,15 @@ class my_Database():
 
 
     def close(self):
+        self.conn.commit()
         self.conn.close()
 
     def drop_table(self,  table:str = 'music'):
         sql = "DROP TABLE IF EXISTS " + table   
         cursor = self.conn.cursor()
         cursor.execute(sql)
-
+        self.conn.commit()
+    
     # {attribute1: property1, ...}
     def create_table(self, attributes:dict, table:str = 'music'):
         sql = "CREATE TABLE IF NOT EXISTS music (" + ''.join(
@@ -68,6 +70,7 @@ class my_Database():
         except:
             print("Execution error")
             self.conn.rollback()
+        cursor.close()
 
     # insert if the row did not exist, otherwise update it
     def insert_or_update(self, new_row:dict , table:str = 'music'):
@@ -83,7 +86,9 @@ class my_Database():
             self.conn.commit()
         except:
             print("Execution error")
+            print(sql)
             self.conn.rollback()
+        cursor.close()
 
 
     # implement select sql and return a dictionary
@@ -93,7 +98,7 @@ class my_Database():
         cursor = self.conn.cursor(cursor = pymysql.cursors.DictCursor)
         cursor.execute(sql)   
         data = cursor.fetchall()  
-
+        cursor.close()
         #cursor.execute("DESC " + table)   
         #attr_record = cursor.fetchall()
 
@@ -132,34 +137,39 @@ class my_Database():
         except:
             print("Execution error")
             self.conn.rollback()
+        cursor.close()
         
 
-# All API's default taget is "music" table, so current we don't need to set this function parameter
+if __name__== "__main__":
+    # All API's default taget is "music" table, so current we don't need to set this function parameter
 
-# TEST API
-db = my_Database()
+    # TEST API
+    print("run")
+    db = my_Database()
+    print("Connection built")
+    # Initialize an empty table
+    
+    db.drop_table()
+    db.create_table(ATTRIBUTES) # same as db.create_table(ATTRIBUTES, "music")
+    print("start insertion")
 
-# Initialize an empty table
-db.drop_table()
-db.create_table(ATTRIBUTES) # same as db.create_table(ATTRIBUTES, "music")
+    # Insert a row
+    row = {"name":"yellow", "time":":04:11", "author":"coldplay"}
+    db.insert(row)
 
-# Insert a row
-row = {"name":"yellow", "time":":04:11", "author":"coldplay"}
-db.insert(row)
+    # search the song containing "old"
+    data = db.query_by_all("old")
+    print(data)
 
-# search the song containing "old"
-data = db.query_by_all("old")
-print(data)
+    # Insert or update a row
+    new_row = { "id":2 , "name":"red", "time":":04:11", "author":"coldplay"}
+    db.insert_or_update(new_row)
+    data = db.query_by_all("")
+    print(data)
 
-# Insert or update a row
-new_row = { "id":2 , "name":"red", "time":":04:11", "author":"coldplay"}
-db.insert_or_update(new_row)
-data = db.query_by_all("")
-print(data)
+    # Delete the row with id = 1
+    db.delete(1)
+    data = db.query_by_all("")
+    print(data)
 
-# Delete the row with id = 1
-db.delete(1)
-data = db.query_by_all("")
-print(data)
-
-db.close()
+    db.close()
