@@ -8,26 +8,29 @@ channels = number of channels decoded from header
 pw (or whatever) = PlayWav(filename = filename,sample_rate = sample_rate,channels = channels)
 
 play music:
-pw.playmusic()
+start_position = starting position (current position on the progress bar), default 0 (start from beginning)
+>> how to calculate start_position <<
+> current time * size of data
+>-----------------------------(divide by)
+> total time * pw.block_size
+> should be an integer
+pw.playmusic(start_position = start_position)
 
 stop music:
 pw.stopmusic()
-
-please create a new PlayWav object even when replaying the same file
 
 Note:
 I am using sounddevice because only sounddevice can work fine on my computer...
 Problem need to be solved: do not know if stop music works fine because I can't test stop music.
 When the music is playing it blocks everything else. Maybe this can be solved by calling methods
-in this class concurrently with other processes, e.g. UI, but I'm not sure. Also, after stopping
-the music has to restart from the begining. It would need some modification if we want to imple-
-ment progress bar.
+in this class concurrently with other processes, e.g. UI, but I'm not sure.
+<new!>It should now support progress bar (to some extent)
 
 Chinese Simplified Version:
 不知道为啥我的电脑上只有sounddevice能用。。。现在这个程序确定能工作的只有playmusic，不知道stopmusic
 能不能用，因为我不知道怎么让这个音乐后台播放。。。也许需要做UI部分的大佬来处理一下音乐播放和UI同时
-运行的问题。。。而且这个play/stop停止之后只能重新开始。。。总之先写一个应付一下phase 1 ddl，以后可
-以再改
+运行的问题。。。
+（更新）现在大概可以支持progress bar了（大概（总之看上面↑的usage
 """
 import queue
 import sys
@@ -44,7 +47,8 @@ class PlayWav:
         self._buffer_size = buffer_size
         self._q = queue.Queue(maxsize = buffer_size)
         #self._event = threading.Event()
-        self.stream = sd.OutputStream(samplerate = self.sample_rate,blocksize = self.block_size,channels = self.channels,callback = self.callback)
+        #self.test_count = 0
+        #self.stream = sd.OutputStream(samplerate = self.sample_rate,blocksize = self.block_size,channels = self.channels,callback = self.callback)
     #will remove these if not needed
     @property
     def filename(self):
@@ -63,6 +67,7 @@ class PlayWav:
         return self._buffer_size
 
     def callback(self,outdata,frames,time,status):
+        #self.test_count += 1
         assert frames == self.block_size
         assert not status
         data = self._q.get_nowait()
@@ -72,9 +77,21 @@ class PlayWav:
             raise sd.CallbackStop
         outdata[:] = data
 
-    def playmusic(self):
+    def playmusic(self,start_position = 0):
+        #play from current "block" -> start_position (default:0)
+        #f.seek(start_position * self.block_size)
+        #clear the queue first
+        #need to create a stream each time
+        self.stream = sd.OutputStream(samplerate = self.sample_rate,blocksize = self.block_size,channels = self.channels,callback = self.callback)
+        while not self._q.empty():
+            try:
+                self._q.get_nowait()
+            except Empty:
+                continue
+            self._q.task_done()
         with sf.SoundFile(self.filename) as f:
             #initialize buffer with the first chunks of data
+            f.seek(start_position * self.block_size)
             for i in range(self.buffer_size):
                 data = f.read(self.block_size)
                 if not len(data):
@@ -98,5 +115,6 @@ if __name__ == "__main__":
         sample_rate = fi.samplerate
         channels = fi.channels
         pw = PlayWav(filename = filename,sample_rate = sample_rate,channels = channels)
+        pw.playmusic(start_position = 500)
+        print("finished")
         pw.playmusic()
-        print("playback ended")
