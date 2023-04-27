@@ -1,21 +1,3 @@
- #This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-#def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
- #   print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-#if __name__ == '__main__':
- #   print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
-# 导入
-# 导入
 import os
 import os.path as osp
 import time
@@ -27,11 +9,15 @@ import random
 
 import DataBase.mysql
 
+HOST = 'localhost'
+USER = 'csci3280'
+PASSWORD = 'csci3280'
+DATABASE = 'project'
 
 root = tkinter.Tk()
-root.title('音乐播放器')
+root.title('Music Player')
 root.geometry('460x600+500+100')
-root.resizable(False,False)  # 不能拉伸
+root.resizable(False,False) 
 
 # tkinter variable object that shows music list
 List_var = None
@@ -39,16 +25,16 @@ List_var = None
 # folder to store the music 
 folder ='./'
 
-# res to store the list of music
+# res to store the list of music, in the dictionary form
 res = []
 
-# current music idx
+# current selected music idx
 cur_idx = 0
 
 now_music = ''
 
-
-db = DataBase.mysql.my_Database()
+# Connect to the local database
+db = DataBase.mysql.my_Database(host = HOST,user= USER, password= PASSWORD, database= DATABASE)
 
 # get attributes information
 cursor = db.conn.cursor()
@@ -59,6 +45,8 @@ ATTRIBUTES = {attr[0] :attr[1] for attr in attr_record}
 cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED")
 db.conn.commit()
 cursor.close()
+
+
 
 class MyDialog(tkinter.simpledialog.Dialog):
 
@@ -104,8 +92,11 @@ def buttonAddClick():
     Add music 
     :return:
     """
+
+    # Get the files
     files = tkinter.filedialog.askopenfilenames()
     
+    # Get the names
     musics = [music for music in files
                 if music.endswith(('.mp3','.wav','.ogg'))]
 
@@ -114,25 +105,32 @@ def buttonAddClick():
 
     for music in musics:
         _, tail = osp.split(music)
-        #new_window = tkinter().Tk()
-        d = MyDialog(root)
+
         row = {"name": tail, "time":"4:00"}
+        d = MyDialog(root)
 
         if (d.success):
             for key in d.result:
                 row[key] = d.result[key]
+            # create unique file name to store
             row['location'] = osp.join(folder, str(random.randint(1,1e9)) +"_"+ row['name'] )
+            if (not row['location'].endswith(".wav") ): row['location'] += ".wav"
             # add the file to the target location 
-            try:
-                with open(row['location'], 'wb+') as tar_f:
-                    with open(music, "rb") as ori_f:
-                        tar_f.write(ori_f.read())
-            except:
-                print("Fail to add file")
-                os.remove(row['location'])
+            
+            if (db.insert_or_update(row)):
+                try:
+                    with open(row['location'], 'wb+') as tar_f:
+                        with open(music, "rb") as ori_f:
+                            tar_f.write(ori_f.read())
+                except:
+                    tkinter.messagebox.showerror(title=None, message="Fail to add file!")
+                    os.remove(row['location'])
+            else:
+                print("Please check if the information are correct!")
+                tkinter.messagebox.showerror(title=None, message="Please check if the information are correct!")
+            
 
-            #row['location'] = music
-            db.insert_or_update(row)
+            
 
 def List_on_select(evt):
     global cur_idx
@@ -150,13 +148,14 @@ def Fetch_Show():
 
     global playing
     playing = True
-    # 根据情况禁用和启用相应的按钮
+    # Enable buttons
     buttonPlay['state'] = 'normal'
     buttonStop['state'] = 'normal'
     # buttonPause['state'] = 'normal'
-    pause_resume.set('播放')
+    pause_resume.set('PLAY')
 
-    while (True):
+    while (True): 
+        # should also gather information from other computers!
         res = db.select()
         ret = [i["name"] for i in res]
 
@@ -173,22 +172,24 @@ def Fetch_Show():
 
 def play():
     """
-    播放音乐
+    PLAY音乐
     :return:
-    """
+    """ 
+    global cur_idx
     if len(res):
         pygame.mixer.init()
-        global cur_idx
         while playing:
             if not pygame.mixer.music.get_busy():
                 netxMusic = res[cur_idx]['location']
                 if (netxMusic):
                     pygame.mixer.music.load(netxMusic.encode())
-                    # 播放
+                    # PLAY
                     pygame.mixer.music.play(1)
                     #netxMusic = netxMusic.split('\\')[1:]
                     musicName.set('playing......'+ res[cur_idx]['name'] )
                 else:
+                    # here download and play music from other compurers 
+
                     print("music not found")
                 
             else:
@@ -208,7 +209,7 @@ def buttonDeleteClick():
         db.delete(id = res[cur_idx]['id'])
     except:
         print("Fail to delete")
-        pass
+        
 
     if len(res) -1 == cur_idx:
         cur_idx = 0
@@ -220,49 +221,39 @@ def buttonDeleteClick():
 
 def buttonPlayClick():
     """
-    点击播放
+    点击PLAY
     :return:
     """
+    global playing
     buttonNext['state'] = 'normal'
 
     buttonPrev['state'] = 'normal'
-    # 选择要播放的音乐文件夹
-    if pause_resume.get() == '播放':
-        pause_resume.set('暂停')
-        global folder
 
-        if not folder:
-            folder = tkinter.filedialog.askdirectory()
-
-        if not folder:
-            return
-
-        global playing
-
+    if pause_resume.get() == 'PLAY':
+        pause_resume.set('STOP')
         playing = True
 
-        # 创建一个线程来播放音乐，当前主线程用来接收用户操作
         t = threading.Thread(target=play)
         t.start()
 
-    elif pause_resume.get() == '暂停':
+    elif pause_resume.get() == 'STOP':
         # pygame.mixer.init()
         pygame.mixer.music.pause()
 
-        pause_resume.set('继续')
+        pause_resume.set('CONTINUE')
 
-    elif pause_resume.get() == '继续':
+    elif pause_resume.get() == 'CONTINUE':
         # pygame.mixer.init()
         pygame.mixer.music.unpause()
 
-        pause_resume.set('暂停')
+        pause_resume.set('STOP')
 
 
 
 
 def buttonStopClick():
     """
-    停止播放
+    STOPPLAY
     :return:
     """
     global playing
@@ -272,7 +263,7 @@ def buttonStopClick():
 
 def buttonNextClick():
     """
-    下一首
+    NEXT
     :return:
     """
     global playing
@@ -285,7 +276,7 @@ def buttonNextClick():
         cur_idx = cur_idx + 1
 
     playing = True
-    # 创建线程播放音乐,主线程用来接收用户操作
+
     t = threading.Thread(target=play)
     t.start()
 
@@ -295,7 +286,6 @@ def closeWindow():
     关闭窗口
     :return:
     """
-    # 修改变量，结束线程中的循环
 
     global playing
 
@@ -304,10 +294,6 @@ def closeWindow():
     time.sleep(0.3)
 
     try:
-
-        # 停止播放，如果已停止，
-
-        # 再次停止时会抛出异常，所以放在异常处理结构中
 
         pygame.mixer.music.stop()
 
@@ -323,7 +309,6 @@ def closeWindow():
 
 def control_voice(value=0.5):
     """
-    声音控制
     :param value: 0.0-1.0
     :return:
     """
@@ -332,7 +317,7 @@ def control_voice(value=0.5):
 
 def buttonPrevClick():
     """
-    上一首
+    PREV
     :return:
     """
     global playing
@@ -353,67 +338,66 @@ def buttonPrevClick():
     else:
         cur_idx -= 2
         # cur_idx -= 1
-    print(cur_idx)
+
 
     playing = True
-
-    # 创建一个线程来播放音乐，当前主线程用来接收用户操作
-
     t = threading.Thread(target=play)
     t.start()
 
+if __name__ == "__main__":
 
-# 窗口关闭
-root.protocol('WM_DELETE_WINDOW', closeWindow)
+    # The callback of closing 
+    root.protocol('WM_DELETE_WINDOW', closeWindow)
 
-# 添加按钮
-#buttonChoose = tkinter.Button(root,text='添加',command=buttonChooseClick)
-buttonChoose = tkinter.Button(root,text='添加',command=buttonAddClick)
-# 布局
-buttonChoose.place(x=50,y=10,width=50,height=20)
+    # Add
+    buttonChoose = tkinter.Button(root,text='ADD',command=buttonAddClick)
+    
+    # Layout
+    buttonChoose.place(x=50,y=10,width=50,height=20)
 
-# 播放按钮
-pause_resume = tkinter.StringVar(root,value='播放')
-buttonPlay = tkinter.Button(root,textvariable=pause_resume,command=buttonPlayClick)
-buttonPlay.place(x=190,y=10,width=50,height=20)
-buttonPlay['state'] = 'disabled'
-
-
-# 停止按钮
-buttonStop = tkinter.Button(root, text='停止',command=buttonStopClick)
-buttonStop.place(x=120, y=10, width=50, height=20)
-buttonStop['state'] = 'disabled'
-
-# 下一首
-buttonNext = tkinter.Button(root, text='下一首',command=buttonNextClick)
-buttonNext.place(x=260, y=10, width=50, height=20)
-buttonNext['state'] = 'disabled'
-# 上一首
-buttonPrev = tkinter.Button(root, text='上一首',command=buttonPrevClick)
-buttonPrev.place(x=330, y=10, width=50, height=20)
-buttonPrev['state'] = 'disabled'
-
-# Delete
-buttonDelete = tkinter.Button(root, text='Delete',command=buttonDeleteClick)
-buttonDelete.place(x=390, y=10, width=50, height=20)
-buttonDelete['state'] = 'disabled'
+    # PLAY
+    pause_resume = tkinter.StringVar(root,value='PLAY')
+    buttonPlay = tkinter.Button(root,textvariable=pause_resume,command=buttonPlayClick)
+    buttonPlay.place(x=190,y=10,width=50,height=20)
+    buttonPlay['state'] = 'disabled'
 
 
-# 标签
-musicName = tkinter.StringVar(root, value='暂时没有播放音乐...')
-labelName = tkinter.Label(root, textvariable=musicName)
-labelName.place(x=10, y=30, width=260, height=20)
+    # END
+    buttonStop = tkinter.Button(root, text='STOP',command=buttonStopClick)
+    buttonStop.place(x=120, y=10, width=50, height=20)
+    buttonStop['state'] = 'disabled'
 
-# 音量控制
-s = tkinter.Scale(root, label='音量', from_=0, to=1, orient=tkinter.HORIZONTAL,
-                  length=240, showvalue=0, tickinterval=2, resolution=0.1,command=control_voice)
-s.place(x=50, y=50, width=200)
+    # NEXT
+    buttonNext = tkinter.Button(root, text='NEXT',command=buttonNextClick)
+    buttonNext.place(x=260, y=10, width=50, height=20)
+    buttonNext['state'] = 'disabled'
+    
+    # PREV
+    buttonPrev = tkinter.Button(root, text='PREV',command=buttonPrevClick)
+    buttonPrev.place(x=330, y=10, width=50, height=20)
+    buttonPrev['state'] = 'disabled'
+
+    # DELETE
+    buttonDelete = tkinter.Button(root, text='DELETE',command=buttonDeleteClick)
+    buttonDelete.place(x=390, y=10, width=50, height=20)
+    buttonDelete['state'] = 'disabled'
 
 
-show_list_thread = threading.Thread(target= Fetch_Show, daemon = True)
-show_list_thread.start()
+    # Label
+    musicName = tkinter.StringVar(root, value='Current No music played')
+    labelName = tkinter.Label(root, textvariable=musicName)
+    labelName.place(x=10, y=30, width=260, height=20)
 
-# 显示
-root.mainloop()
+    # Volume control
+    s = tkinter.Scale(root, label='Volume', from_=0, to=1, orient=tkinter.HORIZONTAL,
+                    length=240, showvalue=1, tickinterval=2, resolution=0.1,command=control_voice)
+    s.place(x=50, y=50, width=200)
+
+
+    show_list_thread = threading.Thread(target= Fetch_Show, daemon = True)
+    show_list_thread.start()
+
+    # 显示
+    root.mainloop()
 
 

@@ -5,7 +5,7 @@ USER = 'csci3280'
 PASSWORD = 'csci3280'
 DATABASE = 'project'
 ATTRIBUTES = {'id': 'INT AUTO_INCREMENT PRIMARY KEY',
-              'name': 'CHAR(80) NOT NULL',
+              'name': 'CHAR(80) NOT NULL UNIQUE',
               'time': 'TIME NOT NULL',
               'author': 'CHAR(80)',
               'album' : 'CHAR(80)',
@@ -67,10 +67,13 @@ class my_Database():
         try:
             cursor.execute(sql, val)
             self.conn.commit()
+            res = True
         except:
             print("Execution error")
             self.conn.rollback()
+            res = False
         cursor.close()
+        return res
 
     # insert if the row did not exist, otherwise update it
     def insert_or_update(self, new_row:dict , table:str = 'music'):
@@ -84,11 +87,13 @@ class my_Database():
         try:
             cursor.execute(sql)
             self.conn.commit()
+            res = True
         except:
             print("Execution error")
-            print(sql)
             self.conn.rollback()
+            res =  False
         cursor.close()
+        return res
 
 
     # implement select sql and return a dictionary
@@ -133,12 +138,14 @@ class my_Database():
         try:
             cursor.execute(sql)
             self.conn.commit()
+            res =  True
             # later delete the wav file ...
         except:
             print("Execution error")
             self.conn.rollback()
-        cursor.close()
-        
+            res = False
+        cursor.close()    
+        return res
 
 if __name__== "__main__":
     # All API's default taget is "music" table, so current we don't need to set this function parameter
