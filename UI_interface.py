@@ -16,270 +16,98 @@
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
 # 导入
 # 导入
-import os
-import time
-import tkinter
-import tkinter.filedialog
-import threading
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog
 import pygame
-
-
-
-root = tkinter.Tk()
-root.title('音乐播放器')
-root.geometry('460x600+500+100')
-root.resizable(False,False)  # 不能拉伸
-
-folder =''
-res = []
-num = 0
-now_music = ''
-
-
-
-def buttonChooseClick():
-    """
-    添加文件夹
-    :return:
-    """
-    global folder
-    global res
-    if not folder:
-        folder = tkinter.filedialog.askdirectory()
-        musics = [folder + '\\' + music
-                  for music in os.listdir(folder) \
-\
-                  if music.endswith(('.mp3','.wav','.ogg'))]
-        ret = []
-        for i in musics:
-            ret.append(i.split('\\')[1:])
-            res.append(i.replace('\\','/'))
-
-        var2 = tkinter.StringVar()
-        var2.set(ret)
-        lb = tkinter.Listbox(root,listvariable=var2)
-        lb.place(x=50,y=100,width=260,height=300)
-
-    if not folder:
-        return
-
-    global playing
-    playing = True
-    # 根据情况禁用和启用相应的按钮
-    buttonPlay['state'] = 'normal'
-    buttonStop['state'] = 'normal'
-    # buttonPause['state'] = 'normal'
-    pause_resume.set('播放')
-
-def play():
-    """
-    播放音乐
-    :return:
-    """
-    if len(res):
-        pygame.mixer.init()
-        global num
-        while playing:
-            if not pygame.mixer.music.get_busy():
-                netxMusic = res[num]
-                print(netxMusic)
-                print(num)
-                pygame.mixer.music.load(netxMusic.encode())
-                # 播放
-                pygame.mixer.music.play(1)
-                if len(res) -1 == num:
-                    num = 0
-                else:
-                    num = num + 1
-                netxMusic = netxMusic.split('\\')[1:]
-                musicName.set('playing......' + ''.join(netxMusic))
-            else:
-                time.sleep(0.1)
-
-
-def buttonPlayClick():
-    """
-    点击播放
-    :return:
-    """
-    buttonNext['state'] = 'normal'
-
-    buttonPrev['state'] = 'normal'
-    # 选择要播放的音乐文件夹
-    if pause_resume.get() == '播放':
-        pause_resume.set('暂停')
-        global folder
-
-        if not folder:
-            folder = tkinter.filedialog.askdirectory()
-
-        if not folder:
-            return
-
-        global playing
-
-        playing = True
-
-        # 创建一个线程来播放音乐，当前主线程用来接收用户操作
-        t = threading.Thread(target=play)
-        t.start()
-
-    elif pause_resume.get() == '暂停':
-        # pygame.mixer.init()
-        pygame.mixer.music.pause()
-
-        pause_resume.set('继续')
-
-    elif pause_resume.get() == '继续':
-        # pygame.mixer.init()
-        pygame.mixer.music.unpause()
-
-        pause_resume.set('暂停')
-
-
-
-def buttonStopClick():
-    """
-    停止播放
-    :return:
-    """
-    global playing
-    playing = False
-    pygame.mixer.music.stop()
-
-
-def buttonNextClick():
-    """
-    下一首
-    :return:
-    """
-    global playing
-    playing = False
-    pygame.mixer.music.stop()
-    global num
-    if len(res) == num:
-        num = 0
-
-    playing = True
-    # 创建线程播放音乐,主线程用来接收用户操作
-    t = threading.Thread(target=play)
-    t.start()
-
-
-def closeWindow():
-    """
-    关闭窗口
-    :return:
-    """
-    # 修改变量，结束线程中的循环
-
-    global playing
-
-    playing = False
-
-    time.sleep(0.3)
-
-    try:
-
-        # 停止播放，如果已停止，
-
-        # 再次停止时会抛出异常，所以放在异常处理结构中
-
-        pygame.mixer.music.stop()
-
-        pygame.mixer.quit()
-
-    except:
-
-        pass
-
-    root.destroy()
-
-
-def control_voice(value=0.5):
-    """
-    声音控制
-    :param value: 0.0-1.0
-    :return:
-    """
-    pygame.mixer.music.set_volume(float(value))
-
-
-def buttonPrevClick():
-    """
-    上一首
-    :return:
-    """
-    global playing
-
-    playing = False
-
-    pygame.mixer.music.stop()
-    #
-    # pygame.mixer.quit()
-    global num
-    # num += 1
-    # num -= 1
-    if num == 0:
-        num = len(res) - 2
-        # num -= 1
-    elif num == len(res) - 1:
-        num -= 2
-    else:
-        num -= 2
-        # num -= 1
-    print(num)
-
-    playing = True
-
-    # 创建一个线程来播放音乐，当前主线程用来接收用户操作
-
-    t = threading.Thread(target=play)
-
-    t.start()
-
-
-# 窗口关闭
-root.protocol('WM_DELETE_WINDOW', closeWindow)
-
-# 添加按钮
-buttonChoose = tkinter.Button(root,text='添加',command=buttonChooseClick)
-# 布局
-buttonChoose.place(x=50,y=10,width=50,height=20)
-
-# 播放按钮
-pause_resume = tkinter.StringVar(root,value='播放')
-buttonPlay = tkinter.Button(root,textvariable=pause_resume,command=buttonPlayClick)
-buttonPlay.place(x=190,y=10,width=50,height=20)
-buttonPlay['state'] = 'disabled'
-
-
-# 停止按钮
-buttonStop = tkinter.Button(root, text='停止',command=buttonStopClick)
-buttonStop.place(x=120, y=10, width=50, height=20)
-buttonStop['state'] = 'disabled'
-
-# 下一首
-buttonNext = tkinter.Button(root, text='下一首',command=buttonNextClick)
-buttonNext.place(x=260, y=10, width=50, height=20)
-buttonNext['state'] = 'disabled'
-# 上一首
-buttonPrev = tkinter.Button(root, text='上一首',command=buttonPrevClick)
-buttonPrev.place(x=330, y=10, width=50, height=20)
-buttonPrev['state'] = 'disabled'
-
-
-# 标签
-musicName = tkinter.StringVar(root, value='暂时没有播放音乐...')
-labelName = tkinter.Label(root, textvariable=musicName)
-labelName.place(x=10, y=30, width=260, height=20)
-
-# 音量控制
-# HORIZONTAL表示为水平放置，默认为竖直,竖直为vertical
-s = tkinter.Scale(root, label='音量', from_=0, to=1, orient=tkinter.HORIZONTAL,
-                  length=240, showvalue=0, tickinterval=2, resolution=0.1,command=control_voice)
-s.place(x=50, y=50, width=200)
-
-
-# 显示
+import mysql.connector
+
+class MusicPlayer:
+    def __init__(self, window):
+         self.window = window
+         self.window.title("Music Player")
+         # player setting
+         self.play_button = ttk.Button(window, text="Play", command=self.play_music)
+         self.pause_button = ttk.Button(window, text="Pause", command=self.pause_music)
+         self.stop_button = ttk.Button(window, text="Stop", command=self.stop_music)
+         self.volume_label = ttk.Label(window, text="Volume:")
+         self.volume_slider = ttk.Scale(window, from_=0, to=100, orient="horizontal", command=self.change_volume)
+
+         # create table
+         menubar = tk.Menu(window)
+         self.window.config(menu=menubar)
+
+         file_menu = tk.Menu(menubar)
+         menubar.add_cascade(label="File", menu=file_menu)
+         file_menu.add_command(label="Open", command=self.open_music)
+
+         edit_menu = tk.Menu(menubar)
+         menubar.add_cascade(label="Edit", menu=edit_menu)
+         edit_menu.add_command(label="Search", command=self.search_music)
+
+         # player settings
+         self.play_button.grid(row=0, column=0, padx=10, pady=10)
+         self.pause_button.grid(row=0, column=1, padx=10, pady=10)
+         self.stop_button.grid(row=0, column=2, padx=10, pady=10)
+         self.volume_label.grid(row=1, column=0, padx=10, pady=10)
+         self.volume_slider.grid(row=1, column=1, columnspan=2, padx=10, pady=10)
+
+         # search settings
+         search_label = ttk.Label(window, text="Search:")
+         self.search_box = ttk.Entry(window)
+         search_button = ttk.Button(window, text="Search", command=self.search_music)
+         search_label.grid(row=2, column=0, padx=10, pady=10, sticky="W")
+         self.search_box.grid(row=2, column=1, padx=10, pady=10)
+         search_button.grid(row=2, column=2, padx=10, pady=10)
+
+         # initialize
+         pygame.mixer.init()
+         self.cnx = mysql.connector.connect(user='your_username', password='your_password', host='your_host',
+                                            database='your_database')
+         self.cursor = self.cnx.cursor()
+         self.music_file = None
+    def open_music(self):
+         self.music_file = filedialog.askopenfilename()
+         pygame.mixer.music.load(self.music_file)
+         # insert music file from database
+         music_title = self.music_file.split("/")[-1]
+         music_path = self.music_file.replace("'", "\\'")
+         insert_query = f"INSERT INTO music (title, path) VALUES ('{music_title}', '{music_path}');"
+         self.cursor.execute(insert_query)
+         self.cnx.commit()
+
+    def play_music(self):
+         if self.music_file:
+             pygame.mixer.music.play()
+
+    def pause_music(self):
+         if self.music_file:
+             pygame.mixer.music.pause()
+
+    def stop_music(self):
+         if self.music_file:
+             pygame.mixer.music.stop()
+
+    def change_volume(self, event):
+         pygame.mixer.music.set_volume(self.volume_slider.get() / 100)
+
+    def search_music(self):
+         search_term = self.search_box.get()
+         # find music in the database and then play
+         select_query = f"SELECT * FROM music WHERE title LIKE '%{search_term}%'"
+         self.cursor.execute(select_query)
+         result = self.cursor.fetchone()
+         if result:
+             music_title = result[1]
+             music_path = result[2].replace("\\'", "'")
+             self.music_file = music_path
+             pygame.mixer.music.load(self.music_file)
+             pygame.mixer.music.play()
+         # this place to search
+root = tk.Tk()
+root.geometry("400x300")  # resize the window
+app = MusicPlayer(root)
 root.mainloop()
+
+
+
