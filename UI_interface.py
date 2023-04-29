@@ -16,6 +16,7 @@ PASSWORD = 'csci3280'
 DATABASE = 'project'
 
 
+
 Attributes = None
 
 class MyDialog(tkinter.simpledialog.Dialog):
@@ -66,7 +67,6 @@ class MusicPlayer:
         # tkinter variable object that shows music list
         self.List_var = tkinter.StringVar()
         lb = tkinter.Listbox(root,listvariable=self.List_var)
-        lb.place(x=50,y=150,width=260,height=300)
         lb.bind('<<ListboxSelect>>', self.List_on_select)
 
         # folder to store the music 
@@ -100,35 +100,27 @@ class MusicPlayer:
 
         # Add
         buttonChoose = tkinter.Button(root,text='ADD',command=self.add_music)
-        
-        # Layout
-        buttonChoose.place(x=50,y=10,width=50,height=20)
 
         # PLAY
         self.pause_resume = tkinter.StringVar(root,value='PLAY')
         buttonPlay = tkinter.Button(root,textvariable=self.pause_resume,command=self.play_music)
-        buttonPlay.place(x=190,y=10,width=50,height=20)
         buttonPlay['state'] = 'normal'
         
 
         # END
         buttonStop = tkinter.Button(root, text='STOP',command=self.stop_music)
-        buttonStop.place(x=120, y=10, width=50, height=20)
         buttonStop['state'] = 'normal'
 
         # NEXT
         buttonNext = tkinter.Button(root, text='NEXT',command=self.switch_nxt)
-        buttonNext.place(x=260, y=10, width=50, height=20)
         buttonNext['state'] = 'normal'
         
         # PREV
         buttonPrev = tkinter.Button(root, text='PREV',command=self.switch_pre)
-        buttonPrev.place(x=330, y=10, width=50, height=20)
         buttonPrev['state'] = 'normal'
 
         # DELETE
         buttonDelete = tkinter.Button(root, text='DELETE',command=self.delete_music)
-        buttonDelete.place(x=390, y=10, width=50, height=20)
         buttonDelete['state'] = 'normal'
 
 
@@ -140,8 +132,42 @@ class MusicPlayer:
         # Volume control
         s = tkinter.Scale(root, label='Volume', from_=0, to=1, orient=tkinter.HORIZONTAL,
                         length=240, showvalue=1, tickinterval=2, resolution=0.1,command=self.control_voice)
-        s.place(x=50, y=50, width=200)
+        
 
+        # search settings
+        search_label = tkinter.Label(root, text="Search:")
+        self.search_box = tkinter.Entry(root)
+        search_button = tkinter.Button(root, text="Search", command=self.search_music)
+
+
+        buttonChoose.place(x=50,y=10,width=50,height=20)
+        buttonPlay.place(x=190,y=10,width=50,height=20)        
+        buttonStop.place(x=120, y=10, width=50, height=20)  
+        buttonNext.place(x=260, y=10, width=50, height=20)
+        buttonPrev.place(x=330, y=10, width=50, height=20)        
+        buttonDelete.place(x=390, y=10, width=50, height=20)
+        s.place(x=50, y=50, width=200)
+        lb.place(x=50,y=200,width=260,height=300)
+        search_label.place(x=50, y=150, width=50)
+        self.search_box.place(x=100, y=150, width=200)
+        search_button.place(x=320, y=140, width=50)
+
+        # search_label.grid(row=5, column=0, padx=10, pady=10, sticky="W")
+        # self.search_box.grid(row=5, column=1, padx=10, pady=10)
+        # search_button.grid(row=5, column=2, padx=10, pady=10)
+
+
+
+
+        # buttonChoose.grid(row=0, column=0, padx=5, pady=5)
+        # buttonPlay.grid(row=0, column=1, padx=5, pady=5)
+        # buttonStop.grid(row=0, column=2, padx=5, pady=5)
+        # buttonNext.grid(row=1, column=0, padx=10, pady=10)
+        # buttonPrev.grid(row=1, column=1, columnspan=2, padx=10, pady=10)
+        # buttonDelete.grid(row=1, column=2, padx=10, pady=10)
+        # labelName.grid(row=2, column=0, padx=10, pady=10)
+        # s.grid(row=3, column=0, padx=10, pady=10)
+        # lb.grid(row=4, column=0, padx=100, pady=100)
 
         show_list_thread = threading.Thread(target= self.fetch_show, daemon = True)
         show_list_thread.start()
@@ -149,7 +175,19 @@ class MusicPlayer:
         self.t = None 
         root.mainloop()
 
-    
+    def search_music(self):
+        search_term = self.search_box.get()
+        # find music in the database and then play
+        # select_query = f"SELECT * FROM music WHERE title LIKE '%{search_term}%'"
+        # self.cursor.execute(select_query)
+        # result = self.cursor.fetchone()
+        # if result:
+        #     music_title = result[1]
+        #     music_path = result[2].replace("\\'", "'")
+        #     self.music_file = music_path
+        #     pygame.mixer.music.load(self.music_file)
+        #     pygame.mixer.music.play()
+        # this place to search
     
     def open_music(self):
          self.music_file = filedialog.askopenfilename()
@@ -361,7 +399,8 @@ if __name__ == "__main__":
     root = tkinter.Tk()
     root.title('Music Player')
     root.geometry('460x600+500+100')
-    root.resizable(False,False) 
+    #root.geometry("400x300")
+    #root.resizable(False,False) 
 
     app = MusicPlayer(root)
 
