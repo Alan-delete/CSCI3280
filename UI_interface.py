@@ -169,6 +169,7 @@ class MusicPlayer:
         # s.grid(row=3, column=0, padx=10, pady=10)
         # lb.grid(row=4, column=0, padx=100, pady=100)
 
+        self.query = ""
         show_list_thread = threading.Thread(target= self.fetch_show, daemon = True)
         show_list_thread.start()
 
@@ -177,6 +178,7 @@ class MusicPlayer:
 
     def search_music(self):
         search_term = self.search_box.get()
+        self.query = search_term
         # find music in the database and then play
         # select_query = f"SELECT * FROM music WHERE title LIKE '%{search_term}%'"
         # self.cursor.execute(select_query)
@@ -266,11 +268,11 @@ class MusicPlayer:
 
         while (True): 
             # should also gather information from other computers!
-            self.res = self.db.select()
-
+            # self.res = self.db.select()
+            self.res = self.db.query_by_all(self.query)
             ret = [i["name"] for i in self.res]
             self.List_var.set(ret)
-            time.sleep(1)
+            time.sleep(0.5)
 
 
     def play(self):
