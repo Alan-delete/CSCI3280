@@ -80,7 +80,8 @@ class UI:
         self.res = []
 
         # set up the node with connection to database 
-        self.node = Mynode(host="", port=65432, file_port=65433, res = self.res)
+        self.node = Mynode(host="", port=65432, file_port=65433, db = self.db)
+        self.node.start()
 
         # current selected music idx
         self.cur_idx = 0
@@ -262,7 +263,7 @@ class UI:
     def get_nodes_res(self):
         res = [{"name":"red", "time":"4:00", "author":"s"}]
         self.node.send_message({"type": "ask_inf"})
-        return res
+        return self.node.remote_res
 
 
     def List_on_select(self, evt):
