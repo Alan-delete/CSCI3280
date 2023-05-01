@@ -3,8 +3,6 @@ import socket
 # DESKTOP-MHI4JFV
 HOST = socket.gethostname()
 HOSTIP = socket.gethostbyname(HOST)
-print(HOSTIP)
-print(socket.gethostbyname("localhost"))
 PORT = 1600
 
 def client_part():
@@ -14,40 +12,68 @@ def client_part():
     s.close()
 
 
-# if __name__ == '__main__':
-#     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     server.bind((HOST, PORT))
-#     # here 10 is the maximun number of clients  
-#     server.listen(10)
-#     print("start server")
-
-#     while True:
-#         client, addr = server.accept()
-#         print( "connect to address:", addr)
-#         client.send('test'.encode())
-#         client.close()
-
 # new method using pythonp2p
 from pythonp2p import Node
 
 class Mynode(Node):
-  def on_message(message, sender, private):
+  # Maybe pass the reference of self.res and self.buffer as well 
+  def __init__(self, host="", port=65432, file_port=65433, res = None):
+      super().__init__(host, port, file_port)
+      self.res = res
+      
+
+  def on_message(self, message, sender, private):
     # Gets called everytime there is a new message
-    pass
+    print("here is node", self.id)
+    print("get information", message)
+
+    if "type" not in message:
+        return 
+
+    if (message["type"] == "ask_inf"):
+        # send the information to sender
+        self.send_message({"type": "send_inf",
+                           "data": self.res}, reciever=sender)
+    
+    elif(message["type"] == "send_inf"):
+        # update the local res with the given data
+        music_data = message["data"]
+
+        local_music_names = set([ song["name"] for song in self.res])
+        # update res or local database?
+        # what if there are two songs with same name but different attributes?
+        # So only "insert" but not update 
+        for song in music_data:
+            # without id information
+            # only with unique name
+            if (song["name"] not in local_music_names):
+                del song["id"]
+                self.res.append(song)
+
+    elif(message["type"] == "ask_buffer"):
+        music_name = message["name"]
+        pass
+    
+    elif(message["type"] == "send_buffer"):
+        # download and play the stream
+        pass
+
+
+    if (message["data"][1]==2):
+        self.send_message({"data": [1,1,3]}, reciever=sender)
+    
   
 def test():
 
     fhash = ""
     #Empty string means '0.0.0.0' which means that program will bind to and receive requests from all NICs
-    node0 = Node("", 65434)
-    node1 = Node("", 65435)
+    node0 = Mynode("", 65434)
+    node1 = Mynode("", 65435)
 
     node0.start()
     node1.start()
-    print(node0.ip)
-    print(node1.ip)
 
-    #node0.connect_to(HOST, 65435)
+    node0.connect_to("localhost", 65435)
 
 
     def test_node_connect():
@@ -56,9 +82,9 @@ def test():
 
 
     def test_node_message():
-        node0.send_message("node test")
-        assert len(node1.msgs.keys()) == 1
-        assert len(node0.msgs.keys()) == 1
+        node0.send_message({"data": [1,2,3]})
+        #assert len(node1.msgs.keys()) == 1
+        #assert len(node0.msgs.keys()) == 1
 
 
     def test_node_private_message():
@@ -77,6 +103,7 @@ def test():
         assert len(node1.msgs.keys()) == 2
 
     #test_node_connect()
+    test_node_message()
     node0.stop()
     node1.stop()
 

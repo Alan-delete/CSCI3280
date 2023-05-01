@@ -7,8 +7,11 @@ from tkinter import filedialog
 import threading
 import pygame
 import random
+import datetime
 
+import wave
 import DataBase.mysql
+from server import Mynode
 
 HOST = 'localhost'
 USER = 'csci3280'
@@ -60,9 +63,10 @@ class MyDialog(tkinter.simpledialog.Dialog):
 
 
 
-class MusicPlayer:
-    def __init__(self, root):
+class UI:
+    def __init__(self, root, db):
         self.root = root
+        self.db = db
 
         # tkinter variable object that shows music list
         self.List_var = tkinter.StringVar()
@@ -75,12 +79,11 @@ class MusicPlayer:
         # res to store the list of music, in the dictionary form
         self.res = []
 
+        # set up the node with connection to database 
+        self.node = Mynode(host="", port=65432, file_port=65433, res = self.res)
+
         # current selected music idx
         self.cur_idx = 0
-
-
-        # Connect to the local database
-        self.db = DataBase.mysql.my_Database(host = HOST,user= USER, password= PASSWORD, database= DATABASE)
 
         # get attributes information
         cursor = self.db.conn.cursor()
@@ -189,20 +192,21 @@ class MusicPlayer:
         #     self.music_file = music_path
         #     pygame.mixer.music.load(self.music_file)
         #     pygame.mixer.music.play()
-        # this place to search
-    
-    def open_music(self):
-         self.music_file = filedialog.askopenfilename()
-         pygame.mixer.music.load(self.music_file)
-         # insert music file from database
-         music_title = self.music_file.split("/")[-1]
-         music_path = self.music_file.replace("'", "\\'")
-         insert_query = f"INSERT INTO music (title, path) VALUES ('{music_title}', '{music_path}');"
-        #  self.cursor.execute(insert_query)
-        #  self.cnx.commit()
 
 
 
+    def edit_music(self):
+        if (0 <= self.cur_idx < len(self.res)):
+            id = self.res[self.cur_idx]["id"]
+            d = MyDialog(self.root)
+            if (d.success):
+                for key in d.result:
+                    self.res[self.cur_idx][key] = d.result[key]
+                # keep the id
+                self.res[self.cur_idx]["id"] = id 
+                self.db.insert_or_update(self.res[self.cur_idx])
+        else:
+            tkinter.messagebox.showerror(title=None, message="Please choose a song to edit!")
 
     def add_music(self):
         # Get the files
@@ -217,10 +221,14 @@ class MusicPlayer:
 
         for music in musics:
             head, tail = osp.split(music)
-            name = tail.replace(".wav", "")
+            name = tail[:tail.rfind('.')]
 
-            row = {"name": name, "time":"4:00"}
-            d = MyDialog(self.root, self.ATTRIBUTES)
+            # get the length of music 
+            with wave.open(music,'rb') as f:
+                time = f.getnframes()/f.getframerate()
+
+            row = {"name": name, "time":str(datetime.timedelta(seconds=time))}
+            d = MyDialog(self.root)
 
             if (d.success):
                 for key in d.result:
@@ -233,8 +241,9 @@ class MusicPlayer:
                         f.write(lyrics_file.read())
 
                 # create unique file name to store
-                row['location'] = osp.join(self.folder, str(random.randint(1,1e9)) +"_"+ row['name'] )
-                if (not row['location'].endswith(".wav") ): row['location'] += ".wav"
+                # row['location'] = osp.join(self.folder, str(random.randint(1,1e9)) +"_"+ row['name'] )
+                row['location'] = osp.join(self.folder,  tail )
+                
                 # add the file to the target location 
                 if (self.db.insert_or_update(row)):
                     try:
@@ -249,7 +258,12 @@ class MusicPlayer:
                     tkinter.messagebox.showerror(title=None, message="Please check if the information are correct!")
                 
 
-                
+    # get the res from other connected nodes given the self.query
+    def get_nodes_res(self):
+        res = [{"name":"red", "time":"4:00", "author":"s"}]
+        self.node.send_message({"type": "ask_inf"})
+        return res
+
 
     def List_on_select(self, evt):
         w = evt.widget
@@ -270,17 +284,42 @@ class MusicPlayer:
             # should also gather information from other computers!
             # self.res = self.db.select()
             self.res = self.db.query_by_all(self.query)
-            ret = [i["name"] for i in self.res]
+            other_res = self.get_nodes_res()
+            # merge the res
+            all_names = set([i["name"] for i in self.res])
+            for other_song in other_res:
+                if (other_song["name"] not in all_names):
+                    self.res.append(other_song)
+                    all_names.add(other_song["name"])
+
+            #ret = [i["name"] for i in self.res]
+
+            ret = [ "{:^15} {:^15} {:^15}".format(i["name"], i["author"] if i["author"] else "None",str(i["time"])) for i in self.res ]
+            #ret.insert(0,"{:^15} {:^15} {:^15}".format("Name", "Author", "Time"))
             self.List_var.set(ret)
             time.sleep(0.5)
 
 
+    def p2p_play(self):
+        pass
+
+    
     def play(self):
 
         if len(self.res):
             pygame.mixer.init()
             if not pygame.mixer.music.get_busy():
                 netxMusic = self.res[self.cur_idx]['location']
+                
+                
+                
+                if not osp.exists(netxMusic):
+                    self.p2p_play()
+
+                
+                
+                
+                
                 if (netxMusic):
                     pygame.mixer.music.load(netxMusic.encode())
                     # PLAY
@@ -372,6 +411,7 @@ class MusicPlayer:
 
         self.root.destroy()
         self.db.close()
+        self.node.stop()
 
 
     def control_voice(self,value=0.5):
@@ -396,13 +436,14 @@ class MusicPlayer:
         self.t.start()
         
 if __name__ == "__main__":
-    #root = tk.Tk()
-    #root.geometry("400x300")  # resize the window
+    # connect to the local database 
+    db = DataBase.mysql.my_Database(host = HOST,user= USER, password= PASSWORD, database= DATABASE)
+
     root = tkinter.Tk()
     root.title('Music Player')
     root.geometry('460x600+500+100')
-    #root.geometry("400x300")
-    #root.resizable(False,False) 
 
-    app = MusicPlayer(root)
+
+    app = UI(root, db)
+    
 
