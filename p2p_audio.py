@@ -43,7 +43,7 @@ class AudioSplitter:
         file_server = fileServer(self, sender_port)
         file_server.start()
 
-        input("Press Enter to stop the file server...")
+        input("[Press Enter to stop the file server]")
 
         file_server.stop()
         file_server.join()
