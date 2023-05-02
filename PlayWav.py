@@ -47,7 +47,7 @@ class PlayWav:
         self._buffer_size = buffer_size
         self._q = queue.Queue(maxsize = buffer_size)
         #self._event = threading.Event()
-        #self.test_count = 0
+        self.block_count = 0
         #self.stream = sd.OutputStream(samplerate = self.sample_rate,blocksize = self.block_size,channels = self.channels,callback = self.callback)
     #will remove these if not needed
     @property
@@ -67,7 +67,7 @@ class PlayWav:
         return self._buffer_size
 
     def callback(self,outdata,frames,time,status):
-        #self.test_count += 1
+        self.block_count += 1
         assert frames == self.block_size
         assert not status
         data = self._q.get_nowait()
@@ -82,6 +82,7 @@ class PlayWav:
         #f.seek(start_position * self.block_size)
         #clear the queue first
         #need to create a stream each time
+        self.block_count = 0
         self.stream = sd.OutputStream(samplerate = self.sample_rate,blocksize = self.block_size,channels = self.channels,callback = self.callback)
         while not self._q.empty():
             try:
@@ -102,7 +103,10 @@ class PlayWav:
                 timeout = self.block_size * self.buffer_size / self.sample_rate
                 while len(data):
                     data = f.read(self.block_size)
-                    self._q.put(data,timeout = timeout)
+                    try:
+                        self._q.put(data,timeout = timeout)
+                    except queue.Full:
+                        break
                 #self._event.wait()
     def stopmusic(self):
         self.stream.stop()
