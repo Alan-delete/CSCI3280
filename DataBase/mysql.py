@@ -1,8 +1,8 @@
 import pymysql
 
 HOST = 'localhost'
-USER = 'csci3280'
-PASSWORD = 'csci3280'
+USER = 'root'
+PASSWORD = 'rd7fx6yt'
 DATABASE = 'project'
 ATTRIBUTES = {'id': 'INT AUTO_INCREMENT PRIMARY KEY',
               'name': 'CHAR(80) NOT NULL UNIQUE',
