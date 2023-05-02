@@ -7,6 +7,7 @@ from PlayWav import PlayWav
 class AudioDecoder:
     def __init__(self, file_path):
         self.file_path = file_path
+        self.pw = None
 
     def read_wav_header(file):
         header_info = [
@@ -81,6 +82,7 @@ class AudioDecoder:
 #            play_obj.wait_done()
     def decode_and_init(self):
         channels,sample_width,sample_rate = self.decode()
+        #print("debug: channels = "+str(channels))
         self.pw = PlayWav(filename = self.file_path,sample_rate = sample_rate,channels = channels)
 
     def play_music(self, start_position = 0):
