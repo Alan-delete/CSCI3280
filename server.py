@@ -108,14 +108,16 @@ class Mynode(Node):
             low, high = message["bound"]
             size = 0
             with open(song["location"],"rb") as f:
-                size = len(f)
-                buffer = [ byte for i, byte in enumerate(f.read()[low:high]) if i%total_idx == idx]
+                bytes = f.read()
+                size = len(bytes)
+                buffer = [ byte for i, byte in enumerate(bytes[low:high]) if i%total_idx == idx]
             self.send_message({ "type": "send_buffer",
                                 "buffer" : buffer,
                                 "idx" : idx,
-                                "total_idx": len(total_idx),
+                                "total_idx": total_idx,
                                 "data": song,
                                 "size": size,
+                                "bound": message["bound"],
                                 "target_id": sender}) 
                                # reciever=sender)
             
@@ -124,22 +126,25 @@ class Mynode(Node):
             # download and play the stream
             song = message["data"]
             idx = message["idx"]
-            total_idx = message["total_idx"]
+            total_ips = message["total_idx"]
             buffer = message["buffer"]
+            low, high = message["bound"]
+
+
             if not self.buffer:
-                self.buffer = [0 for i in range(message[size])]
+                self.buffer = [0 for i in range(message['size'])]
             
+            if (high < message["size"]):
+                self.interleave(song, bound=[high, min(high+100, message["size"])])
+
+            for i, byte in enumerate(buffer):
+                self.buffer[low + total_ips * i + idx] = byte
+
+
             print("recieved buffer")
             print(message)
 
             
-
-
-
-        #if (message["data"][1]==2):
-        #    self.send_message({"data": [1,1,3]}, reciever=sender)
-        
-  
 
 
 

@@ -204,6 +204,7 @@ class UI:
         # Get the names
         musics = [music for music in files
                     if music.endswith(('.mp3','.wav','.ogg'))]
+        musics = [music for music in files]
 
         if len(musics) == 0:
             return
@@ -211,10 +212,13 @@ class UI:
         for music in musics:
             head, tail = osp.split(music)
             name = tail[:tail.rfind('.')]
-
+            time = 0 
             # get the length of music 
-            with wave.open(music,'rb') as f:
-                time = f.getnframes()/f.getframerate()
+            try:
+                with wave.open(music,'rb') as f:
+                    time = f.getnframes()/f.getframerate()
+            except:
+                print("wave failed to open")
 
             row = {"name": name, "time":str(datetime.timedelta(seconds=time))}
             d = MyDialog(self.root)
@@ -252,6 +256,7 @@ class UI:
         #res = [{"name":"red", "time":"4:00", "author":"s"}]
         self.node.send_message({"type": "ask_inf"})
         filtered_remote_res = []
+        return self.node.remote_res
 
         for remote_song in self.node.remote_res:
             if any([self.query in remote_song[key] for key in remote_song]):
@@ -301,7 +306,7 @@ class UI:
 
                    "ids": self.node.record[self.res[self.cur_idx]["name"]]
                    }
-        self.node.interleave(self.res[self.cur_idx])
+        self.node.interleave(self.res[self.cur_idx], bound = [0,100])
         #print(message)
         pass
 
