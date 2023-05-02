@@ -69,7 +69,7 @@ class Mynode(Node):
 
         if (message["type"] == "ask_inf"):
             # send the information to sender
-            local_music = self.db.select()
+            local_music = [] #self.db.select()
             self.send_message({"type": "send_inf",
                             "data": local_music} ) #, reciever=sender)
         

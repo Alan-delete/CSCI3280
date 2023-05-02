@@ -79,6 +79,7 @@ class UI:
         # set up the node with connection to database 
         self.node = Mynode(host="", port=65432, file_port=65433, db = self.db)
         self.node.start()
+        #self.node.connect_to("10.13.80.177", 65432)
 
         # current selected music idx
         self.cur_idx = 0
@@ -152,6 +153,7 @@ class UI:
         lyrics_label.pack()
         lyrics_box = tk.Text(lyrics_frame, width=50, height=10)
         lyrics_box.pack(fill="both", expand=True)
+       
 
         # Label
         self.musicName = tkinter.StringVar(root, value='Current No music played')
@@ -182,7 +184,14 @@ class UI:
         show_list_thread.start()
 
         self.t = None 
+        
         root.mainloop()
+
+    def lyrics_display(self,name): #display the lyrics
+        with open(name+'txt', 'r', encoding='UTF-8') as file: 
+            content = file.read()
+            self.lyrics_box.insert(tk.END, content)
+
 
     def search_music(self):
         search_term = self.search_box.get()
@@ -280,7 +289,6 @@ class UI:
 
     # should be run on the thread
     def fetch_show(self):
-
         self.playing = True
 
         self.pause_resume.set('PLAY')
@@ -288,7 +296,7 @@ class UI:
         while (True): 
             # should also gather information from other computers!
             # self.res = self.db.select()
-            self.res = self.db.query_by_all(self.query)
+            self.res = list(self.db.query_by_all(self.query))
             other_res = self.get_nodes_res()
             # merge the res
             all_names = set([i["name"] for i in self.res])
@@ -310,8 +318,8 @@ class UI:
 
     
     def play(self):
-
         if len(self.res):
+<<<<<<< Updated upstream
             pygame.mixer.init()
             if not pygame.mixer.music.get_busy():
                 netxMusic = self.res[self.cur_idx]['location']
@@ -320,6 +328,22 @@ class UI:
                 
                 if not osp.exists(netxMusic):
                     self.p2p_play()
+=======
+            netxMusic = self.res[self.cur_idx]['location']
+            if not osp.exists(netxMusic):
+                # here download and play music from other compurers
+                self.p2p_play()
+            
+            elif (netxMusic):
+    
+
+
+                self.musicName.set('playing "'+ self.res[self.cur_idx]['name'] + '"')
+                self.decoder = AudioDecoder(netxMusic)
+                self.decoder.decode_and_init()
+                # PLAY
+                self.decoder.play_music(start_position = self.current_position)
+>>>>>>> Stashed changes
 
                 
                 
@@ -361,8 +385,20 @@ class UI:
 
     def play_music(self):
 
+<<<<<<< Updated upstream
         if self.pause_resume.get() == 'PLAY':
             self.pause_resume.set('PAUSE')
+=======
+        if self.pause_resume.get() == 'Play':
+            name = self.res[self.cur_idx]["name"]
+            self.lyrics_box.delete(1.0, tk.END) 
+            self.lyrics_display(name)
+
+            if self.playing:
+                self.stop_music()
+            
+            self.pause_resume.set('Pause')
+>>>>>>> Stashed changes
             self.playing = True
             self.t = threading.Thread(target=self.play)
             self.t.start()
@@ -439,6 +475,9 @@ class UI:
         self.pause_resume.set('PAUSE')
         self.t = threading.Thread(target=self.play)
         self.t.start()
+       
+
+    
         
 if __name__ == "__main__":
     # connect to the local database 
