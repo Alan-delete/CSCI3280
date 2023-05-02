@@ -68,6 +68,8 @@ class UI:
     def __init__(self, root, db):
         self.root = root
         self.db = db
+        self.decoder = None
+        self.current_position = 0
 
         # tkinter variable object that shows music list
         self.List_var = tkinter.StringVar()
