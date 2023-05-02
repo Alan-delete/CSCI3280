@@ -12,6 +12,7 @@ import datetime
 import wave
 import DataBase.mysql
 from server import Mynode
+from audio_decoder import AudioDecoder
 
 HOST = 'localhost'
 USER = 'csci3280'
@@ -308,33 +309,25 @@ class UI:
     def play(self):
 
         if len(self.res):
-            pygame.mixer.init()
-            if not pygame.mixer.music.get_busy():
-                netxMusic = self.res[self.cur_idx]['location']
+            netxMusic = self.res[self.cur_idx]['location']
+            if not osp.exists(netxMusic):
+                self.p2p_play()
+            if (netxMusic):
+                self.musicName.set('playing "'+ self.res[self.cur_idx]['name'] + '"')
+                self.decoder = AudioDecoder(netxMusic)
+                self.decoder.decode_and_init()
+                # PLAY
+                self.decoder.play_music(start_position = self.current_position)
+                #netxMusic = netxMusic.split('\\')[1:]
                 
-                
-                
-                if not osp.exists(netxMusic):
-                    self.p2p_play()
-
-                
-                
-                
-                
-                if (netxMusic):
-                    pygame.mixer.music.load(netxMusic.encode())
-                    # PLAY
-                    pygame.mixer.music.play(1)
-                    #netxMusic = netxMusic.split('\\')[1:]
-                    self.musicName.set('playing "'+ self.res[self.cur_idx]['name'] + '"')
-                else:
-                    # here download and play music from other compurers 
-                    print("music not found")
-                    return 
+            else:
+                # here download and play music from other compurers 
+                print("music not found")
+                return 
 
             while self.playing:
                 time.sleep(0.1)
-            pygame.mixer.music.stop()
+            self.decoder.stop_music()
 
     # delete the current selected song
     def delete_music(self):
@@ -358,21 +351,32 @@ class UI:
     def play_music(self):
 
         if self.pause_resume.get() == 'PLAY':
+            
+            if self.playing:
+                self.stop_music()
             self.pause_resume.set('PAUSE')
             self.playing = True
-            self.t = threading.Thread(target=self.play)
+            self.current_position=0
+            self.t = threading.Thread(target=self.play,daemon=True)
             self.t.start()
 
         elif self.pause_resume.get() == 'PAUSE':
             # pygame.mixer.init()
-            pygame.mixer.music.pause()
+            if self.t:
+                if self.decoder:
+                    self.current_position = self.decoder.pw.block_count
+                    self.decoder.stop_music()
 
             self.pause_resume.set('CONTINUE')
 
         elif self.pause_resume.get() == 'CONTINUE':
             # pygame.mixer.init()
-            pygame.mixer.music.unpause()
-
+            #if self.t:
+            #    if self.decoder:
+            #        self.decoder.play_music(start_position = self.current_position)
+            self.t = threading.Thread(target=self.play,daemon=True)
+            self.t.start()
+            
             self.pause_resume.set('PAUSE')
 
 
@@ -383,8 +387,11 @@ class UI:
         self.musicName.set("Current No music played")
         self.pause_resume.set('PLAY')
         if (self.t):
+            if(self.decoder):
+                self.decoder.stop_music()
             self.t.join()
             self.t = None
+        self.current_position=0
 
 
     def switch_nxt(self):
@@ -398,17 +405,14 @@ class UI:
 
         self.playing = True
         self.pause_resume.set('PAUSE')
-        self.t = threading.Thread(target=self.play)
+        self.t = threading.Thread(target=self.play,daemon=True)
         self.t.start()
 
 
     def closeWindow(self):
         self.stop_music()
 
-        try:
-            pygame.mixer.quit()
-        except:
-            pass
+        
 
         self.root.destroy()
         self.db.close()
@@ -433,18 +437,16 @@ class UI:
 
         self.playing = True
         self.pause_resume.set('PAUSE')
-        self.t = threading.Thread(target=self.play)
+        self.t = threading.Thread(target=self.play,daemon=True)
         self.t.start()
         
 if __name__ == "__main__":
     # connect to the local database 
     db = DataBase.mysql.my_Database(host = HOST,user= USER, password= PASSWORD, database= DATABASE)
-
+    #db = None
     root = tkinter.Tk()
     root.title('Music Player')
     root.geometry('460x600+500+100')
 
 
     app = UI(root, db)
-    
-
