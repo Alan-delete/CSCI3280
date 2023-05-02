@@ -69,11 +69,6 @@ class UI:
         self.root = root
         self.db = db
 
-        # tkinter variable object that shows music list
-        self.List_var = tkinter.StringVar()
-        lb = tkinter.Listbox(root,listvariable=self.List_var)
-        lb.bind('<<ListboxSelect>>', self.List_on_select)
-
         # folder to store the music 
         self.folder ='./'
 
@@ -103,76 +98,110 @@ class UI:
         # The callback of closing 
         root.protocol('WM_DELETE_WINDOW', self.closeWindow)
 
-        # Add
-        buttonChoose = tkinter.Button(root,text='ADD',command=self.add_music)
+        # # Add
+        # buttonChoose = tkinter.Button(root,text='ADD',command=self.add_music)
 
-        # PLAY
-        self.pause_resume = tkinter.StringVar(root,value='PLAY')
-        buttonPlay = tkinter.Button(root,textvariable=self.pause_resume,command=self.play_music)
-        buttonPlay['state'] = 'normal'
+        # # PLAY
+        # self.pause_resume = tkinter.StringVar(root,value='PLAY')
+        # buttonPlay = tkinter.Button(root,textvariable=self.pause_resume,command=self.play_music)
+        # buttonPlay['state'] = 'normal'
         
 
-        # END
-        buttonStop = tkinter.Button(root, text='STOP',command=self.stop_music)
-        buttonStop['state'] = 'normal'
+        # # END
+        # buttonStop = tkinter.Button(root, text='STOP',command=self.stop_music)
+        # buttonStop['state'] = 'normal'
 
-        # NEXT
-        buttonNext = tkinter.Button(root, text='NEXT',command=self.switch_nxt)
-        buttonNext['state'] = 'normal'
+        # # NEXT
+        # buttonNext = tkinter.Button(root, text='NEXT',command=self.switch_nxt)
+        # buttonNext['state'] = 'normal'
         
-        # PREV
-        buttonPrev = tkinter.Button(root, text='PREV',command=self.switch_pre)
-        buttonPrev['state'] = 'normal'
+        # # PREV
+        # buttonPrev = tkinter.Button(root, text='PREV',command=self.switch_pre)
+        # buttonPrev['state'] = 'normal'
 
-        # DELETE
-        buttonDelete = tkinter.Button(root, text='DELETE',command=self.delete_music)
-        buttonDelete['state'] = 'normal'
+        # # DELETE
+        # buttonDelete = tkinter.Button(root, text='DELETE',command=self.delete_music)
+        # buttonDelete['state'] = 'normal'
 
+
+        # # Label
+        # self.musicName = tkinter.StringVar(root, value='Current No music played')
+        # labelName = tkinter.Label(root, textvariable=self.musicName)
+        # labelName.place(x=10, y=30, width=260, height=20)
+
+
+
+        # # search settings
+        # search_label = tkinter.Label(root, text="Search:")
+        # self.search_box = tkinter.Entry(root)
+        # search_button = tkinter.Button(root, text="Search", command=self.search_music)
+
+        # Create a search bar with a search button
+        search_frame = tk.Frame(root, borderwidth=2, relief="raised", padx=10, pady=10)
+        search_frame.pack(fill="x")
+        self.search_input = tk.Entry(search_frame, width=50)
+        self.search_input.pack(side=tk.LEFT, padx=10)
+        search_button = tk.Button(search_frame, text="Search", padx=10,command=self.search_music)
+        search_button.pack(side=tk.LEFT)
+       
+        # Create a list of music
+        # tkinter variable object that shows music list
+        self.List_var = tkinter.StringVar()
+        #lb = tkinter.Listbox(root,listvariable=self.List_var)
+        #lb.bind('<<ListboxSelect>>', self.List_on_select)
+        music_frame = tk.Frame(root, borderwidth=2, relief="raised", padx=10, pady=10)
+        music_frame.pack(fill="both", expand=True)
+        music_list = tk.Listbox(music_frame, listvariable=self.List_var,width=50)
+        music_list.bind('<<ListboxSelect>>', self.List_on_select)
+        music_list.pack(fill="both", expand=True)
+
+        # Create player controls with play, stop, next, and prev buttons
+        controls_frame = tk.Frame(root, borderwidth=2, relief="raised", pady=10)
+        controls_frame.pack(fill="x")
+        self.pause_resume = tkinter.StringVar(root, value='PLAY')
+        play_button = tk.Button(controls_frame, padx=10,command=self.play_music,textvariable=self.pause_resume)
+        play_button.pack(side=tk.LEFT)
+        stop_button = tk.Button(controls_frame, text="Stop", padx=10,command=self.stop_music)
+        stop_button.pack(side=tk.LEFT)
+        prev_button = tk.Button(controls_frame, text="<<", padx=10,command=self.switch_pre)
+        prev_button.pack(side=tk.LEFT)
+        next_button = tk.Button(controls_frame, text=">>", padx=10,command=self.switch_nxt)
+        next_button.pack(side=tk.LEFT)
+        add_button = tk.Button(controls_frame, text="Add", padx=10,command=self.add_music)
+        add_button.pack(side=tk.LEFT)
+        delete_button = tk.Button(controls_frame, text="Delete", padx=10,command=self.delete_music)
+        delete_button.pack(side=tk.LEFT)
+
+
+        # Create a volume slider
+        volume_frame = tk.Frame(root, borderwidth=2, relief="raised", pady=10)
+        volume_frame.pack(fill="x")
+        volume_label = tk.Label(volume_frame, text="Volume:")
+        volume_label.pack(side=tk.LEFT, padx=10)
+        volume_slider = tk.Scale(volume_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=200,command=self.control_voice)
+        volume_slider.pack(side=tk.LEFT, padx=10)
+
+        # Create a progress bar
+        progress_frame = tk.Frame(root, borderwidth=2, relief="raised", padx=10, pady=10)
+        progress_frame.pack(fill="x")
+        progress_bar = tk.Canvas(progress_frame, width=400, height=20, bg='white')
+        progress_bar.pack(fill="x")
+
+        # Create a lyrics display box
+        lyrics_frame = tk.Frame(root, borderwidth=2, relief="raised", padx=10, pady=10)
+        lyrics_frame.pack(fill="both", expand=True)
+        lyrics_label = tk.Label(lyrics_frame, text="Lyrics:")
+        lyrics_label.pack()
+        lyrics_box = tk.Text(lyrics_frame, width=50, height=10)
+        lyrics_box.pack(fill="both", expand=True)
 
         # Label
         self.musicName = tkinter.StringVar(root, value='Current No music played')
         labelName = tkinter.Label(root, textvariable=self.musicName)
         labelName.place(x=10, y=30, width=260, height=20)
 
-        # Volume control
-        s = tkinter.Scale(root, label='Volume', from_=0, to=1, orient=tkinter.HORIZONTAL,
-                        length=240, showvalue=1, tickinterval=2, resolution=0.1,command=self.control_voice)
-        
-
-        # search settings
-        search_label = tkinter.Label(root, text="Search:")
-        self.search_box = tkinter.Entry(root)
-        search_button = tkinter.Button(root, text="Search", command=self.search_music)
 
 
-        buttonChoose.place(x=50,y=10,width=50,height=20)
-        buttonPlay.place(x=190,y=10,width=50,height=20)        
-        buttonStop.place(x=120, y=10, width=50, height=20)  
-        buttonNext.place(x=260, y=10, width=50, height=20)
-        buttonPrev.place(x=330, y=10, width=50, height=20)        
-        buttonDelete.place(x=390, y=10, width=50, height=20)
-        s.place(x=50, y=50, width=200)
-        lb.place(x=50,y=200,width=260,height=300)
-        search_label.place(x=50, y=150, width=50)
-        self.search_box.place(x=100, y=150, width=200)
-        search_button.place(x=320, y=140, width=50)
-
-        # search_label.grid(row=5, column=0, padx=10, pady=10, sticky="W")
-        # self.search_box.grid(row=5, column=1, padx=10, pady=10)
-        # search_button.grid(row=5, column=2, padx=10, pady=10)
-
-
-
-
-        # buttonChoose.grid(row=0, column=0, padx=5, pady=5)
-        # buttonPlay.grid(row=0, column=1, padx=5, pady=5)
-        # buttonStop.grid(row=0, column=2, padx=5, pady=5)
-        # buttonNext.grid(row=1, column=0, padx=10, pady=10)
-        # buttonPrev.grid(row=1, column=1, columnspan=2, padx=10, pady=10)
-        # buttonDelete.grid(row=1, column=2, padx=10, pady=10)
-        # labelName.grid(row=2, column=0, padx=10, pady=10)
-        # s.grid(row=3, column=0, padx=10, pady=10)
-        # lb.grid(row=4, column=0, padx=100, pady=100)
 
         self.query = ""
         show_list_thread = threading.Thread(target= self.fetch_show, daemon = True)
@@ -182,18 +211,8 @@ class UI:
         root.mainloop()
 
     def search_music(self):
-        search_term = self.search_box.get()
+        search_term = self.search_input.get()
         self.query = search_term
-        # find music in the database and then play
-        # select_query = f"SELECT * FROM music WHERE title LIKE '%{search_term}%'"
-        # self.cursor.execute(select_query)
-        # result = self.cursor.fetchone()
-        # if result:
-        #     music_title = result[1]
-        #     music_path = result[2].replace("\\'", "'")
-        #     self.music_file = music_path
-        #     pygame.mixer.music.load(self.music_file)
-        #     pygame.mixer.music.play()
 
 
 
@@ -311,23 +330,24 @@ class UI:
         if len(self.res):
             netxMusic = self.res[self.cur_idx]['location']
             if not osp.exists(netxMusic):
+                # here download and play music from other compurers
                 self.p2p_play()
-            if (netxMusic):
+            
+            elif (netxMusic):
                 self.musicName.set('playing "'+ self.res[self.cur_idx]['name'] + '"')
                 self.decoder = AudioDecoder(netxMusic)
                 self.decoder.decode_and_init()
                 # PLAY
                 self.decoder.play_music(start_position = self.current_position)
-                #netxMusic = netxMusic.split('\\')[1:]
                 
-            else:
-                # here download and play music from other compurers 
+                
+            else: 
                 print("music not found")
                 return 
 
-            while self.playing:
-                time.sleep(0.1)
-            self.decoder.stop_music()
+            #while self.playing:
+            #    time.sleep(0.1)
+            #self.decoder.stop_music()
 
     # delete the current selected song
     def delete_music(self):
@@ -354,19 +374,21 @@ class UI:
             
             if self.playing:
                 self.stop_music()
+            
             self.pause_resume.set('PAUSE')
             self.playing = True
             self.current_position=0
+
             self.t = threading.Thread(target=self.play,daemon=True)
             self.t.start()
 
         elif self.pause_resume.get() == 'PAUSE':
             # pygame.mixer.init()
-            if self.t:
-                if self.decoder:
-                    self.current_position = self.decoder.pw.block_count
-                    self.decoder.stop_music()
 
+            if self.playing and self.t:
+                self.current_position = self.decoder.pw.block_count
+                self.decoder.stop_music()
+            
             self.pause_resume.set('CONTINUE')
 
         elif self.pause_resume.get() == 'CONTINUE':
@@ -374,6 +396,7 @@ class UI:
             #if self.t:
             #    if self.decoder:
             #        self.decoder.play_music(start_position = self.current_position)
+            
             self.t = threading.Thread(target=self.play,daemon=True)
             self.t.start()
             
@@ -381,16 +404,19 @@ class UI:
 
 
 
-
+    # stop music and set the start position to 0
     def stop_music(self):
         self.playing = False
         self.musicName.set("Current No music played")
         self.pause_resume.set('PLAY')
-        if (self.t):
+        try:
             if(self.decoder):
                 self.decoder.stop_music()
-            self.t.join()
-            self.t = None
+        except:
+            print("exception from decode stop")
+        
+        if (self.t): self.t.join()
+        
         self.current_position=0
 
 
@@ -405,14 +431,14 @@ class UI:
 
         self.playing = True
         self.pause_resume.set('PAUSE')
-        self.t = threading.Thread(target=self.play,daemon=True)
-        self.t.start()
+        self.play()
+        
+        #self.t = threading.Thread(target=self.play,daemon=True)
+        #self.t.start()
 
 
     def closeWindow(self):
         self.stop_music()
-
-        
 
         self.root.destroy()
         self.db.close()
@@ -437,8 +463,9 @@ class UI:
 
         self.playing = True
         self.pause_resume.set('PAUSE')
-        self.t = threading.Thread(target=self.play,daemon=True)
-        self.t.start()
+        self.play()
+        #self.t = threading.Thread(target=self.play,daemon=True)
+        #self.t.start()
         
 if __name__ == "__main__":
     # connect to the local database 
@@ -447,6 +474,4 @@ if __name__ == "__main__":
     root = tkinter.Tk()
     root.title('Music Player')
     root.geometry('460x600+500+100')
-
-
     app = UI(root, db)
