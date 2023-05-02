@@ -70,6 +70,8 @@ class Mynode(Node):
         if (message["type"] == "ask_inf"):
             # send the information to sender
             local_music = self.db.select()
+            for music in local_music:
+                music["time"] = str(music["time"])
             self.send_message({"type": "send_inf",
                             "data": local_music} ) #, reciever=sender)
         
@@ -128,93 +130,6 @@ class Mynode(Node):
         
   
 
-
-class Demonode(Node):
-    # Maybe pass the reference of self.res and self.buffer as well 
-    def __init__(self, host="", port=65432, file_port=65433, db = None, res = None):
-        super().__init__(host, port, file_port)
-        self.db = db 
-        self.res = res
-        # {"music_name": [node that has that song]}
-        self.record = {}
-
-    def clear_cache(self):
-        self.record = {}
-
-    def interleave(self, song, bound):
-        ids = self.record[song["name"]]
-        for idx, id in enumerate(ids):
-            self.send_message({ "type": "ask_buffer",
-                                "idx" : idx,
-                                "total_idx": len(ids),
-                                "bound" : bound,
-                                "data": song }, 
-                                reciever=id)
-
-
-    def on_message(self, message, sender, private):
-        # Gets called everytime there is a new message
-
-
-        if "type" not in message:
-            return 
-
-        if (message["type"] == "ask_inf"):
-            # send the information to sender
-            local_music = [{"id": 0, "name":"remote", "time":"4;00", "author":"someboady"}]
-            self.send_message({"type": "send_inf",
-                            "data": local_music})#, reciever=sender)
-        
-        elif (message["type"] == "send_inf"):
-            # update the local res with the given data
-            music_data = message["data"]
-            local_music = self.db.select()
-            local_music_names = set([ song["name"] for song in local_music])
-            # update res or local database?
-            # what if there are two songs with same name but different attributes?
-            # So only "insert" but not update 
-            for song in music_data:
-                # without id information
-                # only with unique name
-                if (song["name"] not in local_music_names):
-                    song["id"] = -1
-                    self.res.append(song)
-                
-                # also record the node id of that song
-                if (song["name"] not in self.record):
-                    self.record[song["name"]] = set([sender])
-                else:
-                    self.record[song["name"]].add(sender)
-
-        
-        elif (message["type"] == "ask_buffer"):
-            song = message["data"]
-            idx = message["idx"]
-            total_idx = message["total_idx"]
-            low, high = message["bound"]
-            with open(song["location"],"rb") as f:
-                buffer = [ byte for i, byte in enumerate(f.read()[low:high]) if i%total_idx == idx]
-            self.send_message({ "type": "send_buffer",
-                                "buffer" : buffer,
-                                "idx" : idx,
-                                "total_idx": len(total_idx),
-                                "data": song}, 
-                                reciever=sender)
-            pass
-        
-        elif (message["type"] == "send_buffer"):
-            # download and play the stream
-            song = message["data"]
-            idx = message["idx"]
-            total_idx = message["total_idx"]
-            buffer = message["buffer"]
-
-            pass
-
-
-
-        #if (message["data"][1]==2):
-        #    self.send_message({"data": [1,1,3]}, reciever=sender)
 
 
 def test():

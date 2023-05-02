@@ -76,6 +76,7 @@ class UI:
         # set up the node with connection to database 
         self.node = Mynode(host="", port=65432, file_port=65433, db = self.db)
         self.node.start()
+        #self.node.connect_to("10.13.80.177", 65432)
 
         # current selected music idx
         self.cur_idx = 0
@@ -157,8 +158,8 @@ class UI:
         lyrics_frame.pack(fill="both", expand=True)
         lyrics_label = tk.Label(lyrics_frame, text="Lyrics:")
         lyrics_label.pack()
-        lyrics_box = tk.Text(lyrics_frame, width=50, height=10)
-        lyrics_box.pack(fill="both", expand=True)
+        self.lyrics_box = tk.Text(lyrics_frame, width=50, height=10)
+        self.lyrics_box.pack(fill="both", expand=True)
 
         # Label
         self.musicName = tkinter.StringVar(root, value='Current No music played')
@@ -248,7 +249,13 @@ class UI:
     def get_nodes_res(self):
         #res = [{"name":"red", "time":"4:00", "author":"s"}]
         self.node.send_message({"type": "ask_inf"})
-        return self.node.remote_res
+        filtered_remote_res = []
+
+        for remote_song in self.node.remote_res:
+            if any([self.query in remote_song[key] for key in remote_song]):
+               filtered_remote_res.append(remote_song)
+
+        return filtered_remote_res
 
 
     def List_on_select(self, evt):
@@ -269,7 +276,7 @@ class UI:
         while (True): 
             # should also gather information from other computers!
             # self.res = self.db.select()
-            self.res = self.db.query_by_all(self.query)
+            self.res = list(self.db.query_by_all(self.query))
             other_res = self.get_nodes_res()
             # merge the res
             all_names = set([i["name"] for i in self.res])
@@ -286,6 +293,13 @@ class UI:
 
 
     def p2p_play(self):
+        message = {"type": "ask_buffer",
+                   
+                   "data": self.res[self.cur_idx],
+
+                   "ids": self.node.record[self.res[self.cur_idx]["name"]]
+                   }
+        print(message)
         pass
 
     
@@ -293,6 +307,9 @@ class UI:
 
         if len(self.res):
             netxMusic = self.res[self.cur_idx]['location']
+            
+
+
             if not osp.exists(netxMusic):
                 # here download and play music from other compurers
                 self.p2p_play()
@@ -303,7 +320,6 @@ class UI:
                 self.decoder.decode_and_init()
                 # PLAY
                 self.decoder.play_music(start_position = self.current_position)
-
                 
             else: 
                 print("music not found")
@@ -325,7 +341,13 @@ class UI:
         else:
             self.cur_idx += 1
         
-
+    def lyrics_display(self,name): #display the lyrics
+        try:
+            with open(name+'txt', 'r', encoding='UTF-8') as file: 
+                content = file.read()
+                self.lyrics_box.insert(tk.END, content)
+        except:
+            self.lyrics_box.insert(tk.END, "No lyrics")
 
 
     def play_music(self):
@@ -335,6 +357,10 @@ class UI:
             if self.playing:
                 self.stop_music()
             
+            name = self.res[self.cur_idx]["name"]
+            self.lyrics_box.delete(1.0, tk.END) 
+            self.lyrics_display(name)
+
             self.pause_resume.set('Pause')
             self.playing = True
             self.current_position=0
