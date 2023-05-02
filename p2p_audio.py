@@ -4,36 +4,56 @@ from pydub import AudioSegment  # pip install pydub
 from io import BytesIO
 import socket
 import struct
+import hashlib
+import pickle
+
+# ------These classes are from pythonp2p------
+from pythonp2p.file_transfer import FileManager
+from pythonp2p.file_transfer import fileClientThread
+from pythonp2p.file_transfer import fileServer
+from pythonp2p.file_transfer import FileDownloader
+# ------These classes are from pythonp2p------
 
 class AudioSplitter:
     def __init__(self, host, port):
         self.HOST = host
         self.PORT = port
+        self.file_manager = FileManager()
 
     def send_audio_parts(self, audio_parts, receiver_host, receiver_port):
         # Send the audio parts to the receiver
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.connect((receiver_host, receiver_port))
-            for part in audio_parts:
-                encoded_part = part.export(format='wav')
-                sock.sendall(struct.pack('>I', len(encoded_part)))
-                sock.sendall(encoded_part.read())
-            sock.sendall(struct.pack('>I', 0))
+        for idx, part in enumerate(audio_parts):
+            part_bytes = BytesIO()
+            part.export(part_bytes, format="wav")
+            part_data = part_bytes.getvalue()
+            self.file_manager.files[hashlib.md5(part_data).hexdigest()] = {
+                "data": part_data,
+                "path": f"part_{idx}.wav",
+            }
+
+        for file_hash, file_data in self.file_manager.files.items():
+            file_downloader = FileDownloader(
+                receiver_host, receiver_port, file_hash, "", self.file_manager
+            )
+            file_downloader.start()
+            file_downloader.join()
 
     def receive_audio_parts(self, sender_host, sender_port):
         # Receive audio parts from the sender
+        file_server = fileServer(self, sender_port)
+        file_server.start()
+
+        input("Press Enter to stop the file server...")
+
+        file_server.stop()
+        file_server.join()
+
         audio_parts = []
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.bind((sender_host, sender_port))
-            sock.listen(1)
-            conn, _ = sock.accept()
-            with conn:
-                while True:
-                    length = struct.unpack('>I', conn.recv(4))[0]
-                    if length == 0:
-                        break
-                    part_data = conn.recv(length)
-                    audio_parts.append(AudioSegment.from_file(BytesIO(part_data), format='wav'))
+        for file_hash, file_data in self.file_manager.files.items():
+            part_data = file_data["data"]
+            part = AudioSegment.from_file(BytesIO(part_data), format="wav")
+            audio_parts.append(part)
+
         return audio_parts
 
     def split_audio(self, audio_path, num_parts, num_senders):
@@ -114,18 +134,18 @@ class AudioSplitter:
         self.merge_audios(interleaved_parts, "local_test_output.wav")
         print("Audio received and saved as 'local_test_output.wav'.")
 
-    def run_audio_splitter(audio_splitter):
+    def run_audio_splitter(self):
         test_mode = input("Do you want to run a local test? (yes/no): ")
         if test_mode.lower() == "yes":
             num_senders = int(input("Input the number of senders (2 or 3): "))
             audio_paths = [input(f"Input the path of audio for sender {i + 1}: ") for i in range(num_senders)]
-            audio_splitter.local_test(audio_paths, num_senders)
+            self.local_test(audio_paths, num_senders)
         else:
-            audio_splitter.p2p_audios()
+            self.p2p_audios()
 
-    if __name__ == "__main__":
-        HOST = socket.gethostname()
-        PORT = 1600
+if __name__ == "__main__":
+    HOST = socket.gethostname()
+    PORT = 1600
 
-        audio_splitter = AudioSplitter(HOST, PORT)
-        run_audio_splitter(audio_splitter)
+    audio_splitter = AudioSplitter(HOST, PORT)
+    audio_splitter.run_audio_splitter()
