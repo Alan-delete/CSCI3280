@@ -85,9 +85,9 @@ class ImageSplitter:
         
     def p2p_images(self):
         # Get the number of senders
-        num_senders = int(input("Input the number of senders (2 or 3): "))
-        if num_senders not in [2, 3]:
-            print("Invalid input. Please enter '2' or '3'.")
+        num_senders = int(input("Input the number of senders (1, 2, or 3): "))  
+        if num_senders not in [1, 2, 3]:
+            print("Invalid input. Please enter '1', '2', or '3'.")
             return
 
         # Get the role of the user
