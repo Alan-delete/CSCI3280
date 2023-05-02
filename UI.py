@@ -319,16 +319,6 @@ class UI:
     
     def play(self):
         if len(self.res):
-<<<<<<< Updated upstream
-            pygame.mixer.init()
-            if not pygame.mixer.music.get_busy():
-                netxMusic = self.res[self.cur_idx]['location']
-                
-                
-                
-                if not osp.exists(netxMusic):
-                    self.p2p_play()
-=======
             netxMusic = self.res[self.cur_idx]['location']
             if not osp.exists(netxMusic):
                 # here download and play music from other compurers
@@ -343,7 +333,6 @@ class UI:
                 self.decoder.decode_and_init()
                 # PLAY
                 self.decoder.play_music(start_position = self.current_position)
->>>>>>> Stashed changes
 
                 
                 
@@ -385,10 +374,6 @@ class UI:
 
     def play_music(self):
 
-<<<<<<< Updated upstream
-        if self.pause_resume.get() == 'PLAY':
-            self.pause_resume.set('PAUSE')
-=======
         if self.pause_resume.get() == 'Play':
             name = self.res[self.cur_idx]["name"]
             self.lyrics_box.delete(1.0, tk.END) 
@@ -398,7 +383,6 @@ class UI:
                 self.stop_music()
             
             self.pause_resume.set('Pause')
->>>>>>> Stashed changes
             self.playing = True
             self.t = threading.Thread(target=self.play)
             self.t.start()
