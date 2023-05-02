@@ -1,9 +1,9 @@
 import os
 import sys
 from PIL import Image  # pip install pillow
+from io import BytesIO
 import socket
 import struct
-
 
 class ImageSplitter:
     def __init__(self, host, port):
@@ -12,28 +12,27 @@ class ImageSplitter:
 
     def send_image_parts(self, image_parts, receiver_host, receiver_port):
         # Send the image parts to the receiver
-        #with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        #    sock.connect((receiver_host, receiver_port))
-        #    for part in image_parts:
-        #        sock.sendall(struct.pack('>I', len(part)))
-        #        sock.sendall(part)
-        #    sock.sendall(struct.pack('>I', 0))
-        return 0
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.connect((receiver_host, receiver_port))
+            for part in image_parts:
+                sock.sendall(struct.pack('>I', len(part)))
+                sock.sendall(part)
+            sock.sendall(struct.pack('>I', 0))
         
     def receive_image_parts(self, sender_host, sender_port):
         # Receive image parts from the sender
         image_parts = []
-        #with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        #    sock.bind((sender_host, sender_port))
-        #    sock.listen(1)
-        #    conn, _ = sock.accept()
-        #    with conn:
-        #        while True:
-        #            length = struct.unpack('>I', conn.recv(4))[0]
-        #            if length == 0:
-        #                break
-        #            part = conn.recv(length)
-        #            image_parts.append(part)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind((sender_host, sender_port))
+            sock.listen(1)
+            conn, _ = sock.accept()
+            with conn:
+                while True:
+                    length = struct.unpack('>I', conn.recv(4))[0]
+                    if length == 0:
+                        break
+                    part = conn.recv(length)
+                    image_parts.append(part)
         return image_parts
         
     def split_image(self, image_path, num_parts, num_senders):
@@ -120,16 +119,19 @@ class ImageSplitter:
         print("Image received and saved as 'local_test_output.png'.")
 
 
-if __name__ == "__main__":
-    HOST = socket.gethostname()
-    PORT = 1600
-    
-    image_splitter = ImageSplitter(HOST, PORT)
-    
-    test_mode = input("Do you want to run a local test? (yes/no): ")
-    if test_mode.lower() == "yes":
-        num_senders = int(input("Input the number of senders (2 or 3): "))
-        image_paths = [input(f"Input the path of image for sender {i + 1}: ") for i in range(num_senders)]
-        image_splitter.local_test(image_paths, num_senders)
-    else:
-        image_splitter.p2p_images()
+    def run_image_splitter(image_splitter):
+        test_mode = input("Do you want to run a local test? (yes/no): ")
+        if test_mode.lower() == "yes":
+            num_senders = int(input("Input the number of senders (2 or 3): "))
+            image_paths = [input(f"Input the path of image for sender {i + 1}: ") for i in range(num_senders)]
+            image_splitter.local_test(image_paths, num_senders)
+        else:
+            image_splitter.p2p_images()
+
+    if __name__ == "__main__":
+        HOST = socket.gethostname()
+        PORT = 1600
+
+        image_splitter = ImageSplitter(HOST, PORT)
+        run_image_splitter(image_splitter)
+
