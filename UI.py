@@ -15,11 +15,9 @@ from server import Mynode
 from audio_decoder import AudioDecoder
 
 HOST = 'localhost'
-USER = 'csci3280'
-PASSWORD = 'csci3280'
+USER = 'root'
+PASSWORD = 'rd7fx6yt'
 DATABASE = 'project'
-
-
 
 Attributes = None
 
@@ -98,6 +96,7 @@ class UI:
         # The callback of closing 
         root.protocol('WM_DELETE_WINDOW', self.closeWindow)
 
+<<<<<<< HEAD
         # # Add
         # buttonChoose = tkinter.Button(root,text='ADD',command=self.add_music)
 
@@ -122,7 +121,61 @@ class UI:
         # # DELETE
         # buttonDelete = tkinter.Button(root, text='DELETE',command=self.delete_music)
         # buttonDelete['state'] = 'normal'
+=======
+        # Create a search bar with a search button
+        search_frame = tk.Frame(root, borderwidth=2, relief="raised", padx=10, pady=10)
+        search_frame.pack(fill="x")
+        search_input = tk.Entry(search_frame, width=50)
+        search_input.pack(side=tk.LEFT, padx=10)
+        search_button = tk.Button(search_frame, text="Search", padx=10,command=self.search_music)
+        search_button.pack(side=tk.LEFT)
+       
+        # Create a list of music
+        music_frame = tk.Frame(root, borderwidth=2, relief="raised", padx=10, pady=10)
+        music_frame.pack(fill="both", expand=True)
+        music_list = tk.Listbox(music_frame, width=50)
+        music_list.pack(fill="both", expand=True)
 
+        # Create player controls with play, stop, next, and prev buttons
+        controls_frame = tk.Frame(root, borderwidth=2, relief="raised", pady=10)
+        controls_frame.pack(fill="x")
+        self.pause_resume = tkinter.StringVar(root, value='PLAY')
+        play_button = tk.Button(controls_frame, padx=10,command=self.play_music,textvariable=self.pause_resume)
+        play_button.pack(side=tk.LEFT)
+        stop_button = tk.Button(controls_frame, text="Stop", padx=10,command=self.stop_music)
+        stop_button.pack(side=tk.LEFT)
+        prev_button = tk.Button(controls_frame, text="<<", padx=10,command=self.switch_pre)
+        prev_button.pack(side=tk.LEFT)
+        next_button = tk.Button(controls_frame, text=">>", padx=10,command=self.switch_nxt)
+        next_button.pack(side=tk.LEFT)
+        add_button = tk.Button(controls_frame, text="Add", padx=10,command=self.add_music)
+        add_button.pack(side=tk.LEFT)
+        delete_button = tk.Button(controls_frame, text="Delete", padx=10,command=self.delete_music)
+        delete_button.pack(side=tk.LEFT)
+
+
+        # Create a volume slider
+        volume_frame = tk.Frame(root, borderwidth=2, relief="raised", pady=10)
+        volume_frame.pack(fill="x")
+        volume_label = tk.Label(volume_frame, text="Volume:")
+        volume_label.pack(side=tk.LEFT, padx=10)
+        volume_slider = tk.Scale(volume_frame, from_=0, to=100, orient=tk.HORIZONTAL, length=200,command=self.control_voice)
+        volume_slider.pack(side=tk.LEFT, padx=10)
+
+        # Create a progress bar
+        progress_frame = tk.Frame(root, borderwidth=2, relief="raised", padx=10, pady=10)
+        progress_frame.pack(fill="x")
+        progress_bar = tk.Canvas(progress_frame, width=400, height=20, bg='white')
+        progress_bar.pack(fill="x")
+>>>>>>> e2978581f6955bf3fe0eb194f031cc79c30cd814
+
+        # Create a lyrics display box
+        lyrics_frame = tk.Frame(root, borderwidth=2, relief="raised", padx=10, pady=10)
+        lyrics_frame.pack(fill="both", expand=True)
+        lyrics_label = tk.Label(lyrics_frame, text="Lyrics:")
+        lyrics_label.pack()
+        lyrics_box = tk.Text(lyrics_frame, width=50, height=10)
+        lyrics_box.pack(fill="both", expand=True)
 
         # # Label
         # self.musicName = tkinter.StringVar(root, value='Current No music played')
@@ -202,6 +255,25 @@ class UI:
 
 
 
+<<<<<<< HEAD
+=======
+        # search_label.grid(row=5, column=0, padx=10, pady=10, sticky="W")
+        # self.search_box.grid(row=5, column=1, padx=10, pady=10)
+        # search_button.grid(row=5, column=2, padx=10, pady=10)
+
+
+
+
+        # buttonChoose.grid(row=0, column=0, padx=5, pady=5)
+        # buttonPlay.grid(row=0, column=1, padx=5, pady=5)
+        # buttonStop.grid(row=0, column=2, padx=5, pady=5)
+        # buttonNext.grid(row=1, column=0, padx=10, pady=10)
+        # buttonPrev.grid(row=1, column=1, columnspan=2, padx=10, pady=10)
+        # buttonDelete.grid(row=1, column=2, padx=10, pady=10)
+        # labelName.grid(row=2, column=0, padx=10, pady=10)
+        # s.grid(row=3, column=0, padx=10, pady=10)
+        # lb.grid(row=4, column=0, padx=100, pady=100)
+>>>>>>> e2978581f6955bf3fe0eb194f031cc79c30cd814
 
         self.query = ""
         show_list_thread = threading.Thread(target= self.fetch_show, daemon = True)
