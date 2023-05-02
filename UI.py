@@ -13,6 +13,8 @@ import wave
 import DataBase.mysql
 from server import Mynode
 from audio_decoder import AudioDecoder
+# from p2p_audio import AudioSplitter
+# from p2p_images import ImageSplitter
 
 HOST = 'localhost'
 USER = 'csci3280'
@@ -300,6 +302,8 @@ class UI:
                    "ids": self.node.record[self.res[self.cur_idx]["name"]]
                    }
         print(message)
+        # audio_splitter = AudioSplitter(HOST, 65432)
+        # audio_splitter.run_audio_splitter()
         pass
 
     
