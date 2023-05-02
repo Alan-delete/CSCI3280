@@ -299,7 +299,8 @@ class UI:
 
                    "ids": self.node.record[self.res[self.cur_idx]["name"]]
                    }
-        print(message)
+        self.node.interleave(self.res[self.cur_idx])
+        #print(message)
         pass
 
     

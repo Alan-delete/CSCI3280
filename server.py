@@ -25,6 +25,8 @@ class Mynode(Node):
         self._remote_res = []
         # {"music_name": [node that has that song]}
         self.record = {}
+
+        self.buffer = None
     
     @property
     def remote_res(self):
@@ -33,15 +35,15 @@ class Mynode(Node):
     def clear_cache(self):
         self.record = {}
 
-    def interleave(self, song, bound):
+    def interleave(self, song, bound = [0, -1]):
         ids = self.record[song["name"]]
         for idx, id in enumerate(ids):
             self.send_message({ "type": "ask_buffer",
+                                "target_id": id,
                                 "idx" : idx,
                                 "total_idx": len(ids),
                                 "bound" : bound,
-                                "data": song }, 
-                                reciever=id)
+                                "data": song })
 
     def encryption_handler(self, dta):
         # if dta["rnid"] == self.id:
@@ -99,27 +101,36 @@ class Mynode(Node):
 
 
         
-        elif (message["type"] == "ask_buffer"):
+        elif (message["type"] == "ask_buffer" and message["target_id"] == self.id):
             song = message["data"]
             idx = message["idx"]
             total_idx = message["total_idx"]
             low, high = message["bound"]
+            size = 0
             with open(song["location"],"rb") as f:
+                size = len(f)
                 buffer = [ byte for i, byte in enumerate(f.read()[low:high]) if i%total_idx == idx]
             self.send_message({ "type": "send_buffer",
                                 "buffer" : buffer,
                                 "idx" : idx,
                                 "total_idx": len(total_idx),
-                                "data": song}) 
+                                "data": song,
+                                "size": size,
+                                "target_id": sender}) 
                                # reciever=sender)
             
         
-        elif (message["type"] == "send_buffer"):
+        elif (message["type"] == "send_buffer"and message["target_id"] == self.id):
             # download and play the stream
             song = message["data"]
             idx = message["idx"]
             total_idx = message["total_idx"]
             buffer = message["buffer"]
+            if not self.buffer:
+                self.buffer = [0 for i in range(message[size])]
+            
+            print("recieved buffer")
+            print(message)
 
             
 
