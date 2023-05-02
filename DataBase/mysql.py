@@ -1,8 +1,8 @@
 import pymysql
 
 HOST = 'localhost'
-USER = 'root'
-PASSWORD = 'rd7fx6yt'
+USER = 'csci3280'
+PASSWORD = 'csci3280'
 DATABASE = 'project'
 ATTRIBUTES = {'id': 'INT AUTO_INCREMENT PRIMARY KEY',
               'name': 'CHAR(80) NOT NULL UNIQUE',
@@ -180,5 +180,3 @@ if __name__== "__main__":
     print(data)
 
     db.close()
-Footer
-
